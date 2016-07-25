@@ -1,6 +1,6 @@
 ﻿'Description: GridSliceGUI application (slices an image into 9 image cells using a grid)
 'Author: George Birbilis (birbilis@kagi.com)
-'Version: 20090306
+'Version: 20090307
 
 Imports System.Math
 Imports GridSliceLib
@@ -10,6 +10,7 @@ Public Class GridSliceGUI
 #Region "Fields"
 
 	Dim slicer As New GridSlicer()
+	Dim lastX, lastY As Integer
 
 #End Region
 
@@ -18,7 +19,13 @@ Public Class GridSliceGUI
 	Protected Sub DrawCropRectangle()
 		Dim bm As Bitmap = slicer.Bitmap.Clone()
 		Using gr As Graphics = Graphics.FromImage(bm)
-			gr.DrawRectangle(Pens.Red, slicer.CellMiddle)
+			Dim pen As Pen = Pens.Red
+			With slicer.CellMiddle
+				gr.DrawLine(pen, 0, .Top, bm.Width - 1, .Top)
+				gr.DrawLine(pen, 0, .Bottom, bm.Width - 1, .Bottom)
+				gr.DrawLine(pen, .Left, 0, .Left, bm.Height - 1)
+				gr.DrawLine(pen, .Right, 0, .Right, bm.Height - 1)
+			End With
 		End Using
 		PictureBox.Image = bm
 		PictureBox.Update()	'needed in order to update the display ASAP
@@ -47,6 +54,8 @@ Public Class GridSliceGUI
 			MsgBox("OK")
 		Else
 			slicer.CellMiddle = New Rectangle(e.X, e.Y, 0, 0)
+			lastX = e.X
+			lastY = e.Y
 			DrawCropRectangle()
 		End If
 	End Sub
@@ -55,7 +64,9 @@ Public Class GridSliceGUI
 		If (slicer.Bitmap Is Nothing) Then Exit Sub
 		If (e.Button = MouseButtons.Left) Then
 			With slicer.CellMiddle
-				slicer.CellMiddle = Rectangle.FromLTRB(Min(.X, e.X), Min(.Y, e.Y), Max(.X, e.X), Max(.Y, e.Y))
+				If (e.X < lastX) Then lastX = .Right Else lastX = .Left
+				If (e.Y < lastY) Then lastY = .Bottom Else lastY = .Top
+				slicer.CellMiddle = Rectangle.FromLTRB(Min(lastX, e.X), Min(lastY, e.Y), Max(lastX, e.X), Max(lastY, e.Y))
 			End With
 			DrawCropRectangle()
 		End If
